@@ -1,0 +1,4 @@
+*.py linguist-language=Python
+*.ts linguist-vendored
+*.tsv linguist-vendored
+# *.ts linguist-language=TypeScript
