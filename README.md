@@ -1,10 +1,39 @@
-Guidelines for executing the code.
-tested with Python 3.9
+# Time Series Kernels based on Nonlinear Vector AutoRegressive Delay Embeddings (NeurIPS 2023)
 
-install dependencies:
-- conda install -c conda-forge numpy pandas scikit-learn sktime
+[![NIPS](https://img.shields.io/badge/NIPS-2023-blue.svg?style=flat-square)]()
 
-run the code:
-- for a quick example, run 'python main.py'. This executes an SVM classification on the JapaneseVowels dataset with the NVAR general setting
-- more settings / experiments / datasets are available inside the code, just uncomment the desired section.
+Code implementation and official repository for the paper "Time Series Kernels based on Nonlinear Vector AutoRegressive Delay Embeddings" (NeurIPS 2023)
 
+**Authors**: [Giovanni De Felice](mailto:gdefe@liverpool.ac.uk), Vladimir Gusev, Cesare Alippi
+
+---
+
+## TLDR
+
+We propose NVARk, a novel kernel for univariate and multivariate time series by integrating NVAR-made dynamics into reservoir-based kernel architectures.
+NVARk compares time series based on the linear dynamics of NVAR embeddings, which are built from concatenating lags and nonlinear functionals to the original series.
+In terms of accuracy, NVARk outperforms the corresponding RC architecture.
+Computationally, it is exceptionally efficient and based on a few integer hyperparameters, which together allow for further improvement of the results with simple supervised grid-based optimization.
+
+---
+
+## Requirements
+
+We run all the experiments in `python 3.9`. To solve all dependencies, we recommend using Anaconda and creating a new environment.
+Then, install the following:
+```bash
+conda install -c conda-forge numpy pandas scikit-learn sktime
+```
+
+## Run the code
+
+For a quick example, run 'python main.py'. This executes an SVM classification on the JapaneseVowels dataset with the NVARk general setting.
+More settings / experiments / datasets are available inside the code, just uncomment the desired section.
+
+## Bibtex reference
+
+If you find this code useful please consider citing our paper:
+
+```
+
+```
