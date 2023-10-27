@@ -241,7 +241,7 @@ class NVARk(BaseEstimator):
                         lamb = OCReP_reg
                     else: 
                         lamb = self.lamb 
-                    self._ridge_embedding = Ridge(alpha=lamb, fit_intercept=True, solver='svd')    # solver can be adapted: 'cholesky' can be unstable for matrices with high collinearity
+                    self._ridge_embedding = Ridge(alpha=lamb, fit_intercept=True, solver='svd') # 'lsqr' \ 'svd' \ 'cholesky'   # solver can be adapted: 'cholesky' can be unstable for matrices with high collinearity
                     self._ridge_embedding.fit(R_nvar[i][0:-1, :], R_nvar[i][1:, :])     # fit to next embedding state
                     coeff_tr.append(self._ridge_embedding.coef_.ravel())
                     biases_tr.append(self._ridge_embedding.intercept_.ravel())
