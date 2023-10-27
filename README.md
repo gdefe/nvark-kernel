@@ -20,12 +20,11 @@ Computationally, it is exceptionally efficient and based on a few integer hyperp
 ## Requirements
 
 We run all the experiments in `python 3.9`. To solve all dependencies, we recommend using Anaconda and creating a new environment.
-Then, install the following:
-```bash
-conda install -c conda-forge numpy pandas scikit-learn sktime
-```
 
-## Run the code
+```
+conda env create -f conda_env.yml
+conda activate nvarkernel_test
+```
 
 For a quick example, run 'python main.py'. This executes an SVM classification on the JapaneseVowels dataset with the NVARk general setting.
 More settings / experiments / datasets are available inside the code, just uncomment the desired section.

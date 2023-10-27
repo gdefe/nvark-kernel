@@ -18,11 +18,12 @@ from scipy.spatial.distance import pdist, cdist, squareform
 from sklearn.svm import SVC
 
 # CV
-from sklearn.model_selection import StratifiedShuffleSplit 
+from sklearn.model_selection import StratifiedShuffleSplit, ShuffleSplit
 from sklearn.model_selection import ParameterGrid
 
 # internal imports
 import utils
+
 
 
 def apply_lag(series, n):
@@ -128,18 +129,21 @@ class NVARk(BaseEstimator):
             # lagged variables are indicated by a single index, polynomial combinations are indicatedby a list of factors
             i_total = i_lagged + i_nonlinear
             
-            if len(i_total)<n_dim_add: 
-                # the possible concatenations are less than n_dim
-                self.sampled_indices=i_total 
-            else:
-                # sample from total
-                random.seed(self.random_state)
-                self.sampled_indices = random.sample(i_total, n_dim_add)        
+            self.sampled_indices = self.maybe_sample_index(n_dim_add, i_total)
+            self.sampled_lag_indices = self.maybe_sample_index(n_dim_add, i_lagged)
+            self.sampled_nonlin_indices = self.maybe_sample_index(n_dim_add, i_nonlinear)        
         return self.sampled_indices
 
 
-
-
+    def maybe_sample_index(self, n_dim_add, indices):
+        if len(indices)<n_dim_add: 
+            # the possible concatenations are less than n_dim
+            sampled_indices = indices 
+        else:
+            # sample from total
+            random.seed(self.random_state)
+            sampled_indices = random.sample(indices, n_dim_add)
+        return sampled_indices
         
     def compute_embedding(self, DATA_x_l, indices=None):
         """ compute the NVAR embedding, given a list of time series and indices to 
@@ -174,16 +178,12 @@ class NVARk(BaseEstimator):
             
             # concatenate 
             for index in self.sampled_indices:
-                # linear terms
-                if type(index)==int: 
-                    R_nvar[i] = np.concatenate((R_nvar[i], 
-                                                    lagged_terms[i][:,index].reshape(-1,1)), 
-                                                    axis=1)
-                # quadratic terms
-                if type(index)==tuple and self.n==2:
-                    R_nvar[i] = np.concatenate((R_nvar[i], 
-                                                    (linear_terms[i][:,index[0]]*linear_terms[i][:,index[1]]).reshape(-1,1)),
-                                                    axis=1)
+                R_nvar[i] = self.cat_dimension(index, R_nvar[i], lagged_terms[i], linear_terms[i])
+            # for index in self.sampled_lag_indices:
+            #     R_nvar[i] = self.cat_dimension(index, R_nvar[i], lagged_terms[i], linear_terms[i])
+            # for index in self.sampled_nonlin_indices:
+            #     if R_nvar[i].shape[-1] >= self.n_dim: break
+            #     R_nvar[i] = self.cat_dimension(index, R_nvar[i], lagged_terms[i], linear_terms[i])
                     
             # drop first states
             # resultant series will be empty if n_drop > length of the series
@@ -193,12 +193,24 @@ class NVARk(BaseEstimator):
         return R_nvar
             
         
-        
+
+    def cat_dimension(self, index, block, lagged_term, linear_term):
+        # linear terms
+        if type(index)==int: 
+            block = np.concatenate((block, 
+                                    lagged_term[:,index].reshape(-1,1)), 
+                                    axis=1)
+        # quadratic terms
+        if type(index)==tuple and self.n==2:
+            block = np.concatenate((block, 
+                                    (linear_term[:,index[0]]*linear_term[:,index[1]]).reshape(-1,1)),
+                                    axis=1)
+        return block      
     
     
     
     
-    def linear_readout(self, R_nvar, thr=10**-10):
+    def linear_readout(self, R_nvar, thr=10**-20):
         """ apply the linear readout to given embeddings
         
         Parameters:
@@ -271,12 +283,19 @@ class NVARk(BaseEstimator):
             pdistance = cdist(te_rep, tr_rep, metric='euclidean')
             # Kernel
             Kernel_matrix = np.exp( -(pdistance)**2 / (2*self.RBF_gamma**2))
+            
+        elif mode=='te-te':
+             assert(te_rep is not None)
+             # pairwise distance
+             pdistance = cdist(te_rep, te_rep, metric='euclidean')
+             # Kernel
+             Kernel_matrix = np.exp( -(pdistance)**2 / (2*self.RBF_gamma**2))
         return Kernel_matrix
     
     
     
     def compute_Ktrtr(self, train):
-        """ Given input data, compute the trian-train kernel matrix
+        """ Given input data, compute the train-train kernel matrix
         
         Parameters:
             train     (list of 2D arrays):    input train data 
@@ -293,16 +312,18 @@ class NVARk(BaseEstimator):
     
     
     
-    def compute_Ktetr(self, train, test): 
+    def compute_Ktetr(self, test, train=None): 
         """ Given input data, compute the test-train kernel matrix
         
         Parameters:
-            train     (list of 2D arrays):    input train data 
             test      (list of 2D arrays):    input test data 
+            train     (list of 2D arrays):    input train data 
         Returns:
             Kernel_matrix  (2D array):  test-train kernel matrix
         """ 
         if self.theta_repr_tr is None:
+            if train is None:
+                raise ValueError('train input must be given if "compute_Ktrtr" has not been called before')
             _                  = self.sample_indices(train)
             self.R_nvar_tr     = self.compute_embedding(train)
             self.theta_repr_tr = self.linear_readout(self.R_nvar_tr)
@@ -316,7 +337,30 @@ class NVARk(BaseEstimator):
         return self.K_tetr
 
 
-
+    def compute_Ktete(self, test=None, train=None): 
+        """ Given input data, compute the test-train kernel matrix
+        
+        Parameters:
+            test      (list of 2D arrays):    input test data 
+            train     (list of 2D arrays):    input train data 
+        Returns:
+            Kernel_matrix  (2D array):  test-train kernel matrix
+        """ 
+        if self.theta_repr_tr is None:
+            if train is None:
+                raise ValueError('train input must be given if "compute_Ktrtr" has not been called before')
+            _                  = self.sample_indices(train)
+            self.R_nvar_tr     = self.compute_embedding(train)
+            self.theta_repr_tr = self.linear_readout(self.R_nvar_tr)
+            self.RBF_gamma = self.gamma_mult * np.median(squareform(pdist(self.theta_repr_tr, metric='euclidean')) )
+            
+        if self.theta_repr_te is None:
+            if test is None:
+                raise ValueError('test input must be given if "compute_Ktetr" has not been called before')
+            self.R_nvar_te      = self.compute_embedding(test)
+            self.theta_repr_te  = self.linear_readout(self.R_nvar_te)
+        self.K_tete         = self.rbf_function(self.theta_repr_te, self.theta_repr_te, 'te-te')  
+        return self.K_tete
 
 
 
@@ -331,7 +375,7 @@ class NVARk(BaseEstimator):
         self.TRAIN_x_l = TRAIN_x_l
         
         # compute Ktrtr
-        if self.verbose_lvl==2: print(f'\tcomputing K tr-tr...')
+        if self.verbose_lvl==2: print('\tcomputing K tr-tr...')
         self.Ktrtr = self.compute_Ktrtr(TRAIN_x_l) 
         
         if not np.isnan(self.Ktrtr).any():
@@ -365,8 +409,8 @@ class NVARk(BaseEstimator):
         """ 
         self.TEST_x_l = TEST_x_l
         # computing K te-tr
-        if self.verbose_lvl==2: print(f'\tcomputing K te-tr...')
-        self.Ktetr = self.compute_Ktetr(self.TRAIN_x_l, self.TEST_x_l)         
+        if self.verbose_lvl==2: print('\tcomputing K te-tr...')
+        self.Ktetr = self.compute_Ktetr(self.TEST_x_l, self.TRAIN_x_l)         
         
         if not np.isnan(self.Ktetr).any():
             if self.readout_type=='SVM':
@@ -424,7 +468,8 @@ class NVARk(BaseEstimator):
 
     def optimize_params(self, TRAIN_x_l, TRAIN_y,
                         k_list=None, s_list=None, n_dim_list=None, svm_C_list=None,      
-                        n_folds=10, val_size=0.33, n_jobs=1):
+                        n_folds=10, val_size=0.33, n_jobs=1, random_state=1234,
+                        split='stratified'):
         """ Optimize parameters of an initialized model
         
         Parameters:
@@ -444,7 +489,12 @@ class NVARk(BaseEstimator):
                   'svm_C': svm_C_list if svm_C_list is not None else [self.svm_C], 
                   }
         param_grid = list(ParameterGrid(params))
-        sss = StratifiedShuffleSplit(n_splits=n_folds, test_size=val_size, random_state=self.random_state)
+        if split=='stratified':
+            sss = StratifiedShuffleSplit(n_splits=n_folds, test_size=val_size, random_state=random_state)
+        elif split=='random':
+            sss = ShuffleSplit(n_splits=n_folds, test_size=val_size, random_state=random_state)
+        else:
+            raise RuntimeError('Invalid split type')
         if self.verbose_lvl==1:
             print(f'\tNVARk CV optimization with n_folds={n_folds} and val_size={val_size}')  
             print(f'\tgrid = {params}')
@@ -461,8 +511,6 @@ class NVARk(BaseEstimator):
             print('\tbest score on validation set:', gs.best_score_)
         best_pars = gs.best_params_
         self.set_params(**best_pars)
-        
-        return best_pars
         
         
         

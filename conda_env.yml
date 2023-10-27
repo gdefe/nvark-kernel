@@ -1,0 +1,14 @@
+name: nvarkernel_test
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.9
+  - pip
+  - pip:
+      - numpy
+      - pandas
+      - scipy
+      - scikit-learn
+      - sktime
+      - cyl1tf
