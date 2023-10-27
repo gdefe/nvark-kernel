@@ -54,7 +54,7 @@ class NVARk(BaseEstimator):
 
     def __init__(self, k=1, n=2, s=1, n_dim=75, lamb=None, gamma_mult=1,
                  repr_mode='ridge', readout_type=None, svm_C=1,
-                 random_state=1, verbose_lvl=0,
+                 random_state=1, verbose_lvl=0, solver='cholesky'
                  ):
         """ Initialize the NVAR model, storing parameters and configurations
         
@@ -68,8 +68,9 @@ class NVARk(BaseEstimator):
             repr_mode    (string): only implemented as 'ridge', one can define different readout modules
             readout_type (string): '1NN'/'SVM' or None; define the end task
             svm_C        (float):  parameter of the SVM
-            random_state
-            verbose_lvl
+            random_state (int):    random seed
+            verbose_lvl (int):    verbosity level
+            solver       (string): solver for the ridge regression: 'svd' \ 'cholesky'   ('cholesky' is faster but can be unstable for matrices with high collinearity)
         """  
         # embedding parameters
         self.k = k
@@ -81,6 +82,7 @@ class NVARk(BaseEstimator):
         self.repr_mode = repr_mode
         self.lamb = lamb
         self.gamma_mult = gamma_mult
+        self.solver = solver
         
         # random seed
         self.random_state = random_state
@@ -241,7 +243,7 @@ class NVARk(BaseEstimator):
                         lamb = OCReP_reg
                     else: 
                         lamb = self.lamb 
-                    self._ridge_embedding = Ridge(alpha=lamb, fit_intercept=True, solver='svd') # 'lsqr' \ 'svd' \ 'cholesky'   # solver can be adapted: 'cholesky' can be unstable for matrices with high collinearity
+                    self._ridge_embedding = Ridge(alpha=lamb, fit_intercept=True, solver=self.solver)
                     self._ridge_embedding.fit(R_nvar[i][0:-1, :], R_nvar[i][1:, :])     # fit to next embedding state
                     coeff_tr.append(self._ridge_embedding.coef_.ravel())
                     biases_tr.append(self._ridge_embedding.intercept_.ravel())

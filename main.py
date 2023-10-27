@@ -31,9 +31,10 @@ datasets_list =  [  ##### ---univ---
 # set to 'zero_padding' for matching the longest series in the dataset
 # set to 'interpolate' 
 prepr_option = 'zero_padding'     # 'none' / 'zero_padding' / 'interpolate'
-experiment='SVM_NVARk' # SVM_NVARk, SVM_NVARk* , time_NVARk
+experiment='time_NVARk' # SVM_NVARk, SVM_NVARk* , time_NVARk
 random_iterations = 10
 svm_C_list = np.logspace(-3, 3, 7)
+solver = 'svd' # 'svd' or 'cholesky'  ('cholesky' is used in the paper, is faster but can be unstable for matrices with high collinearity)
 
 def main():
 
@@ -81,7 +82,7 @@ def main():
             # uncomment one of the following
             
             """ individual steps to output K tr-tr """
-            # model        = NVARk(**params, repr_mode='ridge', random_state=1, verbose_lvl=2)
+            # model        = NVARk(**params, repr_mode='ridge', random_state=1, verbose_lvl=2, solver=solver)
             # _            = model.sample_indices(TRAIN_x_l)
             # R_nvar       = model.compute_embedding(TRAIN_x_l) # list of 2D np arrays
             # theta_repr   = model.linear_readout(R_nvar) # 2D np arrays
@@ -92,7 +93,7 @@ def main():
             """ RUNNING TIME: output matrices in one call and compute running time"""
             if experiment=='time_NVARk':
                   st_time = time.perf_counter()
-                  model      = NVARk(**params, repr_mode='ridge', random_state=1, verbose_lvl=2)
+                  model      = NVARk(**params, repr_mode='ridge', random_state=1, verbose_lvl=2, solver=solver)
                   K_trtr     = model.compute_Ktrtr(TRAIN_x_l)
                   K_tetr     = model.compute_Ktetr(TEST_x_l, TRAIN_x_l)
                   end_time = time.perf_counter()
@@ -108,7 +109,7 @@ def main():
                         print(f'iteration {i}')
                         if i==1: verbose_lvl = 2
                         else:    verbose_lvl = 0
-                        model = NVARk(**params, repr_mode='ridge', random_state=i, verbose_lvl=verbose_lvl, readout_type='SVM')
+                        model = NVARk(**params, repr_mode='ridge', random_state=i, verbose_lvl=verbose_lvl, readout_type='SVM', solver=solver)
                         K_trtr     = model.compute_Ktrtr(TRAIN_x_l)
                         K_tetr     = model.compute_Ktetr(TEST_x_l, TRAIN_x_l)       
                         acc_test, acc_train, best_C = tasks.my_SVMopt_classifier(K_trtr, TRAIN_y, 
@@ -142,7 +143,7 @@ def main():
                   n_dim_list = [75]
 
                   # optimize
-                  model = NVARk(n=2, repr_mode='ridge', random_state=1, verbose_lvl=1, readout_type='SVM', gamma_mult=1)
+                  model = NVARk(n=2, repr_mode='ridge', random_state=1, verbose_lvl=1, readout_type='SVM', gamma_mult=1, solver=solver)
                   model.optimize_params(TRAIN_x_l, TRAIN_y, 
                                     k_list, s_list, n_dim_list, svm_C_list, 
                                     n_folds=10, val_size=0.33, n_jobs=-1, random_state=1,
@@ -171,7 +172,7 @@ def main():
                   #       print(f'iteration {i}')
 
                   #       # optimize
-                  #       model = NVARk(n=2, repr_mode='ridge', random_state=i, verbose_lvl=1, readout_type='SVM', gamma_mult=1)
+                  #       model = NVARk(n=2, repr_mode='ridge', random_state=i, verbose_lvl=1, readout_type='SVM', gamma_mult=1, solver=solver)
                   #       st_time = time.perf_counter()
                   #       model.optimize_params(TRAIN_x_l, TRAIN_y, 
                   #                         k_list, s_list, n_dim_list, svm_C_list, 
