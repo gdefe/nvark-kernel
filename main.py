@@ -19,11 +19,11 @@ warnings.filterwarnings("ignore")
 
 
 datasets_list =  [  ##### ---univ---    
-                    'SwedishLeaf',  
+                  #   'SwedishLeaf',  
                   #   'CinCECGTorso',          
                    
-                    ##### ---multiv---
-                  #   'JapaneseVowels',  
+                    #### ---multiv---
+                    'JapaneseVowels',  
                   #   'UWaveGestureLibrary'
                     ]
 
