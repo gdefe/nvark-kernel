@@ -31,7 +31,7 @@ datasets_list =  [  ##### ---univ---
 # set to 'zero_padding' for matching the longest series in the dataset
 # set to 'interpolate' 
 prepr_option = 'zero_padding'     # 'none' / 'zero_padding' / 'interpolate'
-experiment='time_NVARk' # SVM_NVARk, SVM_NVARk* , time_NVARk
+experiment='SVM_NVARk' # SVM_NVARk, SVM_NVARk* , time_NVARk
 random_iterations = 10
 svm_C_list = np.logspace(-3, 3, 7)
 solver = 'svd' # 'svd' or 'cholesky'  ('cholesky' is used in the paper, is faster but can be unstable for matrices with high collinearity)
@@ -44,6 +44,7 @@ def main():
             TRAIN_x_raw, TRAIN_y_raw, TEST_x_raw, TEST_y_raw = load_dataset(dataset_name)
             
             info = print_info(dataset_name, TRAIN_x_raw, TEST_x_raw, y=TRAIN_y_raw)
+            T_min_init = min(info[dataset_name+' train']['T_min'], info[dataset_name+' test']['T_min'])  
             if   prepr_option=='zero_padding': T_max = max(info[dataset_name+' train']['T_max'], info[dataset_name+' test']['T_max'])
             elif prepr_option=='interpolate' : T_max = 25
             
@@ -69,6 +70,9 @@ def main():
                                                       filter_scale = filter_scale, 
                                                       plot=False)
             k = k_sqrt; s = s_sqrt
+            if k*s >= T_min_init: 
+                  while k*s >= T_min_init:
+                        k = k-1; s = s-1
             params = {'k':k, 
                       'n':2, 
                       's':s, 
@@ -79,8 +83,6 @@ def main():
             
 
 
-            # uncomment one of the following
-            
             """ individual steps to output K tr-tr """
             # model        = NVARk(**params, repr_mode='ridge', random_state=1, verbose_lvl=2, solver=solver)
             # _            = model.sample_indices(TRAIN_x_l)
