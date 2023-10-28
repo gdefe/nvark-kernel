@@ -4,7 +4,7 @@
 
 Code implementation and official repository for the paper "Time Series Kernels based on Nonlinear Vector AutoRegressive Delay Embeddings" (NeurIPS 2023)
 
-**Authors**: [Giovanni De Felice](mailto:gdefe@liverpool.ac.uk), Vladimir Gusev, Cesare Alippi
+**Authors**: [Giovanni De Felice](mailto:gdefe@liverpool.ac.uk), Yannis Goulermas, Vladimir Gusev
 
 ---
 
