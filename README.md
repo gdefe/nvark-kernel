@@ -34,5 +34,12 @@ More settings / experiments / datasets are available inside the code, just uncom
 If you find this code useful please consider citing our paper:
 
 ```
-
+@inproceedings{
+felice2023time,
+title={Time Series Kernels based on Nonlinear Vector AutoRegressive Delay Embeddings},
+author={Giovanni De Felice and John Y Goulermas and Vladimir Gusev},
+booktitle={Thirty-seventh Conference on Neural Information Processing Systems},
+year={2023},
+url={https://openreview.net/forum?id=UBUWFEwn7p}
+}
 ```
