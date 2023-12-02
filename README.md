@@ -1,6 +1,7 @@
 # Time Series Kernels based on Nonlinear Vector AutoRegressive Delay Embeddings (NeurIPS 2023)
 
 [![NIPS](https://img.shields.io/badge/NIPS-2023-blue.svg?style=flat-square)]()
+[![PDF](https://img.shields.io/badge/%E2%87%A9-PDF-orange.svg?style=flat-square)](https://openreview.net/forum?id=UBUWFEwn7p)
 
 Code implementation and official repository for the paper "Time Series Kernels based on Nonlinear Vector AutoRegressive Delay Embeddings" (NeurIPS 2023)
 
